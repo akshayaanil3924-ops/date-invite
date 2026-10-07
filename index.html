@@ -107,6 +107,9 @@
     background: #b8a1c9;
     color: white;
     position: relative;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .success { display: none; }
@@ -172,52 +175,45 @@
   const successCard = document.getElementById("successCard");
   const okay = document.getElementById("okay");
 
-  // The "NO" button escapes far away from the pointer.
-  function escapeNo(e) {
-    const rect = no.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const distance = Math.hypot(e.clientX - centerX, e.clientY - centerY);
-
-    if (distance < 180) moveNo(e.clientX, e.clientY);
-  }
-
   function moveNo(pointerX = window.innerWidth / 2, pointerY = window.innerHeight / 2) {
     const areaRect = area.getBoundingClientRect();
     const noRect = no.getBoundingClientRect();
+    const yesRect = yes.getBoundingClientRect();
 
     no.style.position = "absolute";
 
-    // Keep the NO button well away from YES and from the pointer.
-    const yesRect = yes.getBoundingClientRect();
-    const minDistanceFromYes = 170;
-    const minDistanceFromPointer = 150;
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    const minPointerDistance = coarse ? 100 : 150;
+    const minYesDistance = coarse ? 120 : 170;
+
+    const maxX = Math.max(0, areaRect.width - noRect.width);
+    const maxY = Math.max(0, areaRect.height - noRect.height);
 
     let best = null;
     let bestScore = -Infinity;
 
-    for (let i = 0; i < 80; i++) {
-      const x = Math.random() * Math.max(1, areaRect.width - noRect.width);
-      const y = Math.random() * Math.max(1, areaRect.height - noRect.height);
+    for (let i = 0; i < 150; i++) {
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
 
-      const candidateX = areaRect.left + x + noRect.width / 2;
-      const candidateY = areaRect.top + y + noRect.height / 2;
+      const cx = areaRect.left + x + noRect.width / 2;
+      const cy = areaRect.top + y + noRect.height / 2;
 
-      const distPointer = Math.hypot(candidateX - pointerX, candidateY - pointerY);
-      const yesCenterX = yesRect.left + yesRect.width / 2;
-      const yesCenterY = yesRect.top + yesRect.height / 2;
-      const distYes = Math.hypot(candidateX - yesCenterX, candidateY - yesCenterY);
+      const pointerDistance = Math.hypot(cx - pointerX, cy - pointerY);
 
-      // Prefer positions far from both the pointer and YES.
-      const score = Math.min(distPointer, distYes);
+      const yesCx = yesRect.left + yesRect.width / 2;
+      const yesCy = yesRect.top + yesRect.height / 2;
+      const yesDistance = Math.hypot(cx - yesCx, cy - yesCy);
+
+      const score = Math.min(pointerDistance, yesDistance);
 
       if (score > bestScore) {
         bestScore = score;
         best = { x, y };
       }
 
-      if (distPointer >= minDistanceFromPointer &&
-          distYes >= minDistanceFromYes) {
+      if (pointerDistance >= minPointerDistance &&
+          yesDistance >= minYesDistance) {
         best = { x, y };
         break;
       }
@@ -229,13 +225,32 @@
     }
   }
 
-  document.addEventListener("pointermove", escapeNo);
+  // PC: move when the mouse gets close.
+  document.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse") {
+      const rect = no.getBoundingClientRect();
+      const distance = Math.hypot(
+        e.clientX - (rect.left + rect.width / 2),
+        e.clientY - (rect.top + rect.height / 2)
+      );
 
-  // If they somehow reach/click NO, immediately move it again.
+      if (distance < 190) {
+        moveNo(e.clientX, e.clientY);
+      }
+    }
+  });
+
+  // Mobile + desktop: prevent NO from being successfully tapped.
   no.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     moveNo(e.clientX, e.clientY);
   });
+
+  no.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    moveNo(touch.clientX, touch.clientY);
+  }, { passive: false });
 
   no.addEventListener("mouseenter", (e) => {
     moveNo(e.clientX, e.clientY);
