@@ -13,17 +13,14 @@
     place-items: center;
     overflow: hidden;
     font-family: Georgia, "Times New Roman", serif;
-    background:
-      radial-gradient(circle at 15% 20%, rgba(255,255,255,.65) 0 2px, transparent 3px),
-      radial-gradient(circle at 80% 70%, rgba(255,255,255,.7) 0 3px, transparent 4px),
-      linear-gradient(135deg, #f8eaf1, #eee0ec, #f9edf4);
+    background: #f7f3f5;
   }
 
   .petal {
     position: fixed;
-    font-size: 18px;
-    opacity: .45;
-    animation: float 8s linear infinite;
+    font-size: 15px;
+    opacity: .25;
+    animation: float 10s linear infinite;
     pointer-events: none;
   }
   .p1 { left: 10%; top: 20%; animation-delay: 0s; }
@@ -42,8 +39,8 @@
     min-height: 470px;
     padding: 42px 32px;
     border-radius: 28px;
-    background: rgba(255,255,255,.84);
-    box-shadow: 0 20px 60px rgba(100, 55, 90, .18);
+    background: #ffffff;
+    box-shadow: 0 8px 30px rgba(100, 55, 90, .10);
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -65,14 +62,14 @@
 
   h1 {
     margin: 0;
-    color: #702d45;
-    font-size: clamp(28px, 6vw, 45px);
+    color: #4f3d48;
+    font-size: clamp(25px, 5vw, 36px);
     line-height: 1.15;
   }
 
   .sub {
-    margin: 14px 0 28px;
-    color: #795a67;
+    margin: 12px 0 24px;
+    color: #746771;
     font-family: Arial, sans-serif;
     font-size: 15px;
   }
@@ -98,7 +95,7 @@
   }
 
   #yes {
-    background: #d55c91;
+    background: #d98bab;
     color: white;
   }
   #yes:hover {
@@ -107,7 +104,7 @@
   }
 
   #no {
-    background: #a778d2;
+    background: #b8a1c9;
     color: white;
     position: relative;
   }
@@ -121,17 +118,13 @@
   }
 
   .heart {
-    font-size: 52px;
-    animation: beat 1s infinite;
-  }
-  @keyframes beat {
-    50% { transform: scale(1.15); }
+    font-size: 38px;
   }
 
   .hint {
-    margin-top: 20px;
+    margin-top: 18px;
     font: 12px Arial, sans-serif;
-    color: #a18191;
+    color: #a0929a;
   }
 
   @media (max-width: 520px) {
@@ -151,24 +144,24 @@
 
 <main class="card" id="questionCard">
   <!-- Replace this emoji with your own photo if you want -->
-  <div class="photo" style="display:grid;place-items:center;font-size:64px;">🐶</div>
+  <div class="photo" style="display:grid;place-items:center;font-size:58px;">🐶</div>
 
-  <h1>🌼 namkk nale 5 kazhinj poyalo 🌼</h1>
-  <p class="sub">oru cheriya question... 🫶</p>
+  <h1>namkk nale 5 kazhinj poyalo? 🌼</h1>
+  <p class="sub">oru cheriya plan alle 😊</p>
 
   <div class="buttons" id="buttonArea">
-    <button id="yes">YES 🫶</button>
-    <button id="no">no 🌼</button>
+    <button id="yes">YES 👍</button>
+    <button id="no">no 🙂</button>
   </div>
 
-  <div class="hint">P.S. Try clicking “no” 😄</div>
+  <div class="hint">choose one 😄</div>
 </main>
 
 <main class="card success" id="successCard">
-  <div class="heart">💖</div>
-  <h1>WAIT... YOU ACTUALLY SAID YES?!🫶 </h1>
-  <p>lets goooo </p>
-  <button id="okay">okay okay! →</button>
+  <div class="heart">😊</div>
+  <h1>Okay, set then! 😄</h1>
+  <p>Namukk nale 5 kazhinj poyekkam.</p>
+  <button id="okay">okay 👍</button>
 </main>
 
 <script>
@@ -179,40 +172,78 @@
   const successCard = document.getElementById("successCard");
   const okay = document.getElementById("okay");
 
-  // The "no" button escapes whenever the pointer gets close.
+  // The "NO" button escapes far away from the pointer.
   function escapeNo(e) {
     const rect = no.getBoundingClientRect();
-    const dx = e.clientX - (rect.left + rect.width / 2);
-    const dy = e.clientY - (rect.top + rect.height / 2);
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const distance = Math.hypot(e.clientX - centerX, e.clientY - centerY);
 
-    if (distance < 120) moveNo();
+    if (distance < 180) moveNo(e.clientX, e.clientY);
   }
 
-  function moveNo() {
+  function moveNo(pointerX = window.innerWidth / 2, pointerY = window.innerHeight / 2) {
     const areaRect = area.getBoundingClientRect();
     const noRect = no.getBoundingClientRect();
 
-    const maxX = Math.max(0, areaRect.width - noRect.width);
-    const maxY = Math.max(0, areaRect.height - noRect.height);
-
     no.style.position = "absolute";
-    no.style.left = Math.random() * maxX + "px";
-    no.style.top = Math.random() * maxY + "px";
+
+    // Keep the NO button well away from YES and from the pointer.
+    const yesRect = yes.getBoundingClientRect();
+    const minDistanceFromYes = 170;
+    const minDistanceFromPointer = 150;
+
+    let best = null;
+    let bestScore = -Infinity;
+
+    for (let i = 0; i < 80; i++) {
+      const x = Math.random() * Math.max(1, areaRect.width - noRect.width);
+      const y = Math.random() * Math.max(1, areaRect.height - noRect.height);
+
+      const candidateX = areaRect.left + x + noRect.width / 2;
+      const candidateY = areaRect.top + y + noRect.height / 2;
+
+      const distPointer = Math.hypot(candidateX - pointerX, candidateY - pointerY);
+      const yesCenterX = yesRect.left + yesRect.width / 2;
+      const yesCenterY = yesRect.top + yesRect.height / 2;
+      const distYes = Math.hypot(candidateX - yesCenterX, candidateY - yesCenterY);
+
+      // Prefer positions far from both the pointer and YES.
+      const score = Math.min(distPointer, distYes);
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = { x, y };
+      }
+
+      if (distPointer >= minDistanceFromPointer &&
+          distYes >= minDistanceFromYes) {
+        best = { x, y };
+        break;
+      }
+    }
+
+    if (best) {
+      no.style.left = best.x + "px";
+      no.style.top = best.y + "px";
+    }
   }
 
   document.addEventListener("pointermove", escapeNo);
 
-  // Extra protection: if they somehow touch/click it, it escapes.
+  // If they somehow reach/click NO, immediately move it again.
   no.addEventListener("pointerdown", (e) => {
     e.preventDefault();
-    moveNo();
+    moveNo(e.clientX, e.clientY);
   });
 
-  no.addEventListener("mouseenter", moveNo);
+  no.addEventListener("mouseenter", (e) => {
+    moveNo(e.clientX, e.clientY);
+  });
+
   no.addEventListener("click", (e) => {
     e.preventDefault();
-    moveNo();
+    moveNo(e.clientX, e.clientY);
   });
 
   yes.addEventListener("click", () => {
@@ -221,7 +252,7 @@
   });
 
   okay.addEventListener("click", () => {
-    alert("Okayyy! 🫶🌼");
+    alert("Okay 👍");
   });
 </script>
 </body>
